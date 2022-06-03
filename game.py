@@ -24,9 +24,11 @@ class Game:
         pygame.time.set_timer(userevent, VELOCITY_OF_SNAKE)
 
         self.screen = pygame.display.set_mode((WIDTH_OF_CELLS * CELL_SIZE, HEIGHT_OF_CELLS * CELL_SIZE))
+        pygame.display.set_caption("Snake")
 
-    def logic_with_loop(self):      
-        while True:
+    def logic_with_loop(self):  
+        self.is_active = True    
+        while self.is_active:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -43,7 +45,6 @@ class Game:
                 elif event.type == pygame.USEREVENT:
                     self.snake.update()
 
-
             self.apple.update()
             self.apple.draw(self.screen)
             
@@ -52,6 +53,9 @@ class Game:
             pygame.display.update()
             self.screen.fill(COLOUR_OF_BACKGROUND)
             self.clock.tick(FPS)
+    
+    def stop_loop(self):
+        self.is_active = False
 
 if __name__ == "__main__":
     game = Game()
