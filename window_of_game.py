@@ -8,7 +8,7 @@ from settings import *
 from apple import Apple
 from snake import Snake
 
-class WindowOfGame: 
+class Game: 
     def __init__(self):
         pygame.init()
         
@@ -23,11 +23,9 @@ class WindowOfGame:
         userevent = pygame.USEREVENT
         pygame.time.set_timer(userevent, VELOCITY_OF_SNAKE)
 
-        self.screen = pygame.display.set_mode((WIDTH_OF_SCREEN - (WIDTH_OF_SCREEN % CELL_SIZE), (HEIGHT_OF_SCREEN - (HEIGHT_OF_SCREEN % CELL_SIZE))))
-        print(self.screen.get_width())
-        self.logic_with_loop()
+        self.screen = pygame.display.set_mode((WIDTH_OF_CELLS * CELL_SIZE, HEIGHT_OF_CELLS * CELL_SIZE))
 
-    def logic_with_loop(self):
+    def logic_with_loop(self):      
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -55,4 +53,6 @@ class WindowOfGame:
             self.screen.fill(COLOUR_OF_BACKGROUND)
             self.clock.tick(FPS)
 
-WindowOfGame()
+if __name__ == "__main__":
+    game = Game()
+    game.logic_with_loop()

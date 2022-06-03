@@ -7,8 +7,8 @@ from settings import *
 class Apple:
     def __init__(self, snake=None, start_x=None, start_y=None):
         if not start_x and not start_y:
-           random_start_x = random.randrange(CELL_SIZE, (WIDTH_OF_SCREEN + 1) - CELL_SIZE, CELL_SIZE)
-           random_start_y = random.randrange(CELL_SIZE, (HEIGHT_OF_SCREEN + 1) - CELL_SIZE, CELL_SIZE)
+           random_start_x = random.randrange(CELL_SIZE, WIDTH_OF_CELLS * CELL_SIZE, CELL_SIZE)
+           random_start_y = random.randrange(CELL_SIZE, HEIGHT_OF_CELLS * CELL_SIZE, CELL_SIZE)
 
            self.rect = pygame.Rect(random_start_x, random_start_y, CELL_SIZE, CELL_SIZE)
 
@@ -31,8 +31,8 @@ class Apple:
             self.snake.add_chunk()
 
     def randomize_position(self):
-        self.rect.x = random.randrange(CELL_SIZE, WIDTH_OF_SCREEN - CELL_SIZE, CELL_SIZE)
-        self.rect.y = random.randrange(CELL_SIZE, HEIGHT_OF_SCREEN - CELL_SIZE, CELL_SIZE)
+        self.rect.x = random.randrange(CELL_SIZE, WIDTH_OF_CELLS * CELL_SIZE, CELL_SIZE)
+        self.rect.y = random.randrange(CELL_SIZE, HEIGHT_OF_CELLS * CELL_SIZE, CELL_SIZE)
 
     def __repr__(self):
         return f"apple | X {self.x} | Y {self.y}"
