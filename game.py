@@ -15,7 +15,7 @@ class Game:
         self.clock = pygame.time.Clock()
         
         self.snake = Snake()
-        self.apple = Apple()
+        self.apple = Apple(start_x=None, start_y=None, texture_path="sources\\textures\\apple.png", snake=self.snake)
 
         self.apple.snake = self.snake
         self.snake.apple = self.apple

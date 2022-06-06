@@ -5,7 +5,7 @@ import pygame
 from settings import *
 
 class Structure:
-    def __init__(self, start_x=None, start_y=None, texture_url=None):
+    def __init__(self, start_x=None, start_y=None, texture_path=None):
         if not start_x and not isinstance(start_x, int):
             random_start_x = random.randrange(CELL_SIZE, WIDTH_OF_CELLS * CELL_SIZE, CELL_SIZE)
             self.x = random_start_x
@@ -20,11 +20,11 @@ class Structure:
         else:
             self.y = start_y - (start_y % CELL_SIZE)
 
-        if not texture_url:
+        if not texture_path:
             self.surface = pygame.image.load("sources\\textures\\error.png")
 
         else:
-            self.surface = pygame.image.load(texture_url)
+            self.surface = pygame.image.load(texture_path)
 
     def draw(self, screen):
         screen.blit(self.surface, (self.x, self.y))
