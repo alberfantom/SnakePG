@@ -19,13 +19,10 @@ class Apple(Structure):
 
     def update(self):
         if self.is_collision():
-            self.randomize_position()
+            # set to random
+            self.set_position(x=None, y=None)
 
             self.snake.add_chunk()
-
-    def randomize_position(self):
-        self.x = random.randrange(CELL_SIZE, WIDTH_OF_CELLS * CELL_SIZE, CELL_SIZE)
-        self.y = random.randrange(CELL_SIZE, HEIGHT_OF_CELLS * CELL_SIZE, CELL_SIZE)
 
     def __repr__(self):
         return f"apple | X {self.x} | Y {self.y}"
