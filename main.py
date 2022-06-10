@@ -46,20 +46,46 @@ class Obstacle(Structure):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
 
 class Snake:
-    class SegmentBase:
-        pass
+    class SegmentBase(Structure):
+        def __init__(self, start_x=None, start_y=None, texture_path=None):
+            super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
+            
+            self._offset = pygame.math.Vector2(0, 0)
 
-    class Segment:
-        pass
+        def set_offset(self, event):
+            if event.key == pygame.K_UP:
+                self._offset = pygame.math.Vector2(0, +Field._cell_size)
 
-    def __init__(self):
-        pass
+            elif event.key == pygame.K_LEFT:
+                self._offset = pygame.math.Vector2(-Field._cell_size, 0)
+
+            elif event.key == pygame.K_DOWN:
+                self._offset = pygame.math.Vector2(0, -Field._cell_size)
+
+            elif event.key == pygame.K_RIGHT:
+                self._offset = pygame.math.Vector2(+Field._cell_size, 0)
+
+        def shift(self):
+            pass
+
+        def update(self):
+            pass
+
+    class Segment(Structure):
+        def __init__(self, start_x=None, start_y=None, texture_path=None):
+            super().__init__(self, start_x=start_x, start_y=start_y, texture_path=texture_path)
+
+    def __init__(self, start_x=None, start_y=None, texture_path=None):
+        self.segment_base = Snake.SegmentBase(start_x=start_x, start_y=start_y, texture_path=texture_path)
+    
+    def draw(self, surface):
+        surface.blit(self.segment_base.surface, self.segment_base.coordinates)
 
 class Field:
-    init_map = ["O O * * *",
-                "O * * * *",
+    init_map = ["O O * O O",
+                "O * * * O",
                 "* * A * *",
-                "* * * * *",
+                "* * * S *",
                 "* * * * *"]
 
     for row in range(len(init_map)):
@@ -74,7 +100,7 @@ class Field:
         self.obstacles = list()
 
         self.apple = None
-        # TODO: Snake
+        self.snake = None
 
         for row in range(len(Field.init_map)):
             for column in range(len(Field.init_map[0])):
@@ -86,17 +112,19 @@ class Field:
                 elif designation == "A":
                     self.apple = Apple(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None)
 
-                # TODO: Snake
+                elif designation == "S":
+                    self.snake = Snake(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None)
 
     def draw(self, surface):
         if self.obstacles:
             for obstacle in self.obstacles:
-                surface.blit(obstacle.surface, obstacle.coordinates)
+                obstacle.draw(surface)
 
         if self.apple:
-            surface.blit(self.apple.surface, self.apple.coordinates)
+            self.apple.draw(surface)
 
-        # TODO: Snake
+        if self.snake:
+            self.snake.draw(surface)
 
 class Game:
     caption = "Snake"
@@ -112,11 +140,17 @@ class Game:
     def loop_with_logic(self):
         while True:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT \
-                    or event.type == pygame.KEYDOWN \
-                        and event.key == pygame.K_ESCAPE:
-                            pygame.quit()
-                            sys.exit()
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+                    
+                    self.field.snake.segment_base.set_offset(event)
+
 
             self.field.draw(self.screen)
 
