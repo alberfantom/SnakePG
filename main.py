@@ -54,22 +54,22 @@ class Snake:
 
         def set_offset(self, event):
             if event.key == pygame.K_UP:
-                self._offset = pygame.math.Vector2(0, +Field._cell_size)
+                self._offset = pygame.math.Vector2(0, +(Field._cell_size))
 
             elif event.key == pygame.K_LEFT:
-                self._offset = pygame.math.Vector2(-Field._cell_size, 0)
+                self._offset = pygame.math.Vector2(-(Field._cell_size), 0)
 
             elif event.key == pygame.K_DOWN:
-                self._offset = pygame.math.Vector2(0, -Field._cell_size)
+                self._offset = pygame.math.Vector2(0, -(Field._cell_size))
 
             elif event.key == pygame.K_RIGHT:
-                self._offset = pygame.math.Vector2(+Field._cell_size, 0)
+                self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
 
-        def shift(self):
-            pass
+        def shift(self, offset=None):
+            self.coordinates += offset
 
         def update(self):
-            pass
+            self.shift(offset=self._offset)
 
     class Segment(Structure):
         def __init__(self, start_x=None, start_y=None, texture_path=None):
@@ -80,6 +80,9 @@ class Snake:
     
     def draw(self, surface):
         surface.blit(self.segment_base.surface, self.segment_base.coordinates)
+    
+    def update(self):
+        self.segment_base.update()
 
 class Field:
     init_map = ["O O * O O",
@@ -151,7 +154,7 @@ class Game:
                     
                     self.field.snake.segment_base.set_offset(event)
 
-
+            self.field.snake.update()
             self.field.draw(self.screen)
 
             pygame.display.update()
