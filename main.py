@@ -46,6 +46,8 @@ class Obstacle(Structure):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
 
 class Snake:
+    velocity_in_millseconds = 75
+
     class SegmentBase(Structure):
         def __init__(self, start_x=None, start_y=None, texture_path=None):
             super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
@@ -54,13 +56,13 @@ class Snake:
 
         def set_offset(self, event):
             if event.key == pygame.K_UP:
-                self._offset = pygame.math.Vector2(0, +(Field._cell_size))
+                self._offset = pygame.math.Vector2(0, -(Field._cell_size))
 
             elif event.key == pygame.K_LEFT:
                 self._offset = pygame.math.Vector2(-(Field._cell_size), 0)
 
             elif event.key == pygame.K_DOWN:
-                self._offset = pygame.math.Vector2(0, -(Field._cell_size))
+                self._offset = pygame.math.Vector2(0, +(Field._cell_size))
 
             elif event.key == pygame.K_RIGHT:
                 self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
@@ -131,6 +133,7 @@ class Field:
 
 class Game:
     caption = "Snake"
+    fps = 75
 
     def __init__(self):
         pygame.init()
@@ -139,6 +142,10 @@ class Game:
 
         pygame.display.set_caption(Game.caption)
         self.screen = pygame.display.set_mode((self.field.width, self.field.height))
+        self.clock = pygame.time.Clock()
+
+        self.snake_shift_event = pygame.USEREVENT
+        pygame.time.set_timer(self.snake_shift_event, Snake.velocity_in_millseconds)
 
     def loop_with_logic(self):
         while True:
@@ -153,11 +160,14 @@ class Game:
                         sys.exit()
                     
                     self.field.snake.segment_base.set_offset(event)
-
-            self.field.snake.update()
-            self.field.draw(self.screen)
+                
+                elif event.type == pygame.USEREVENT:
+                    self.field.snake.update()
+                    self.field.draw(self.screen)
 
             pygame.display.update()
+            # TODO: remove artifacts.
+            self.clock.tick(Game.fps)
             self.screen.fill((0, 0, 0))
 
 if __name__ == "__main__":
