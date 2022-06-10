@@ -1,62 +1,23 @@
-import sys
-import random
+import pygame, sys
 
-import pygame
-
-from settings import *
-
-from apple import Apple
-from snake import Snake
-
-class Game: 
+class Game:
     def __init__(self):
         pygame.init()
-        
-        self.clock = pygame.time.Clock()
-        
-        self.snake = Snake()
-        self.apple = Apple(start_x=None, start_y=None, texture_path="sources\\textures\\apple.png", snake=self.snake)
 
-        self.apple.snake = self.snake
-        self.snake.apple = self.apple
+        self.screen = pygame.display.set_mode((800, 600))
 
-        userevent = pygame.USEREVENT
-        pygame.time.set_timer(userevent, VELOCITY_OF_SNAKE)
-
-        self.screen = pygame.display.set_mode((WIDTH_OF_CELLS * CELL_SIZE, HEIGHT_OF_CELLS * CELL_SIZE))
-        pygame.display.set_caption("Snake")
-
-    def logic_with_loop(self):  
-        self.is_active = True    
-        while self.is_active:
+    def loop_with_logic(self):
+        while True:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        pygame.quit()
-                        sys.exit()
-                    
-                    # define offset for movement
-                    self.snake.set_offset(event)
-    
-                elif event.type == pygame.USEREVENT:
-                    self.snake.update()
-
-            self.apple.update()
-            self.apple.draw(self.screen)
-            
-            self.snake.draw(self.screen)
+                if event.type == pygame.QUIT \
+                    or event.type == pygame.KEYDOWN \
+                        and event.key == pygame.K_ESCAPE:
+                            pygame.quit()
+                            sys.exit()
 
             pygame.display.update()
-            self.screen.fill(COLOUR_OF_BACKGROUND)
-            self.clock.tick(FPS)
-    
-    def stop_loop(self):
-        self.is_active = False
+            self.screen.fill((0, 0, 0))
 
 if __name__ == "__main__":
     game = Game()
-    game.logic_with_loop()
+    game.loop_with_logic()
