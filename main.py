@@ -1,6 +1,6 @@
 import pygame, sys
 
-import random
+import random, time
 
 class Structure:
     def __init__(self, start_x=None, start_y=None, texture_path=None):
@@ -45,20 +45,34 @@ class Structure:
         surface.blit(self.surface, self.coordinates)
 
 class Apple(Structure):
-    def __init__(self, start_x=None, start_y=None, texture_path=None):
+    def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
+        self.field = field
+
+    def randomize_coordinates(self):
+        self.set_position(x=None, y=None)
+
+        for obstacle in self.field.obstacles:
+            if obstacle.coordinates == self.coordinates:
+                self.randomize_coordinates()
+
+        if self.field.snake.segment_base.coordinates == self.coordinates:
+            self.randomize_coordinates()
 
 class Obstacle(Structure):
-    def __init__(self, start_x=None, start_y=None, texture_path=None):
+    def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
+        field = field
 
 class Snake:
+    # TODO: from 1 to 10 (for example)
     velocity_in_millsecond = 235
 
     class SegmentBase(Structure):
-        def __init__(self, start_x=None, start_y=None, texture_path=None):
+        def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
             super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
-            
+            self.field = field
+
             self._offset = pygame.math.Vector2(0, 0)
 
         def set_offset(self, event):
@@ -78,11 +92,15 @@ class Snake:
             self.coordinates += self._offset
 
     class Segment(Structure):
-        def __init__(self, start_x=None, start_y=None, texture_path=None):
+        def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
             super().__init__(self, start_x=start_x, start_y=start_y, texture_path=texture_path)
+            self.field = field
 
-    def __init__(self, start_x=None, start_y=None, texture_path=None):
+    def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         self.segment_base = Snake.SegmentBase(start_x=start_x, start_y=start_y, texture_path=texture_path)
+        # TODO: all segment_base and segment in one list
+        self.field = field
+
 
     def shift(self):
         self.segment_base.shift(offset=self.segment_base._offset)
@@ -91,11 +109,21 @@ class Snake:
         surface.blit(self.segment_base.surface, self.segment_base.coordinates)
 
 class Field:
-    init_map = ["O O * O O",
-                "O * * * O",
-                "* * A * *",
-                "* * * S *",
-                "* * * * *"]
+    init_map = ["O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O * A * * * O O O O O",
+                "O O O O O * * * * * O O O O O",
+                "O O O O O * * * S * O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",
+                "O O O O O O O O O O O O O O O",]
 
     for row in range(len(init_map)):
         init_map[row] = init_map[row].replace(" ", "")
@@ -116,13 +144,13 @@ class Field:
                 designation = Field.init_map[row][column]
 
                 if designation == "O":
-                    self.obstacles.append(Obstacle(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None))
+                    self.obstacles.append(Obstacle(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None, field=self))
 
                 elif designation == "A":
-                    self.apple = Apple(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None)
+                    self.apple = Apple(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None, field=self)
 
                 elif designation == "S":
-                    self.snake = Snake(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None)
+                    self.snake = Snake(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None, field=self)
 
     def draw(self, surface):
         if self.obstacles:
@@ -173,7 +201,7 @@ class Game:
                             pass
 
                     if self.field.snake.segment_base.is_collision(_with=self.field.apple):
-                        self.field.apple.set_position(x=None, y=None)
+                        self.field.apple.randomize_coordinates()
 
             self.field.draw(self.screen)
 
