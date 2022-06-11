@@ -34,6 +34,13 @@ class Structure:
         else:
             self.surface = pygame.image.load(texture_path)
     
+    def is_collision(self, _with=None):
+        if _with:
+            if self.coordinates == _with.coordinates:
+                return True
+            
+            return False
+
     def draw(self, surface):
         surface.blit(self.surface, self.coordinates)
 
@@ -46,7 +53,7 @@ class Obstacle(Structure):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
 
 class Snake:
-    velocity_in_millseconds = 75
+    velocity_in_millsecond = 235
 
     class SegmentBase(Structure):
         def __init__(self, start_x=None, start_y=None, texture_path=None):
@@ -68,10 +75,7 @@ class Snake:
                 self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
 
         def shift(self, offset=None):
-            self.coordinates += offset
-
-        def update(self):
-            self.shift(offset=self._offset)
+            self.coordinates += self._offset
 
     class Segment(Structure):
         def __init__(self, start_x=None, start_y=None, texture_path=None):
@@ -79,12 +83,12 @@ class Snake:
 
     def __init__(self, start_x=None, start_y=None, texture_path=None):
         self.segment_base = Snake.SegmentBase(start_x=start_x, start_y=start_y, texture_path=texture_path)
+
+    def shift(self):
+        self.segment_base.shift(offset=self.segment_base._offset)
     
     def draw(self, surface):
         surface.blit(self.segment_base.surface, self.segment_base.coordinates)
-    
-    def update(self):
-        self.segment_base.update()
 
 class Field:
     init_map = ["O O * O O",
@@ -127,7 +131,7 @@ class Field:
 
         if self.apple:
             self.apple.draw(surface)
-
+        
         if self.snake:
             self.snake.draw(surface)
 
@@ -145,7 +149,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.snake_shift_event = pygame.USEREVENT
-        pygame.time.set_timer(self.snake_shift_event, Snake.velocity_in_millseconds)
+        pygame.time.set_timer(self.snake_shift_event, Snake.velocity_in_millsecond)
 
     def loop_with_logic(self):
         while True:
@@ -162,12 +166,19 @@ class Game:
                     self.field.snake.segment_base.set_offset(event)
                 
                 elif event.type == pygame.USEREVENT:
-                    self.field.snake.update()
-                    self.field.draw(self.screen)
+                    self.field.snake.shift()
 
-            pygame.display.update()
-            # TODO: remove artifacts.
+                    for obstacle in self.field.obstacles:
+                        if self.field.snake.segment_base.is_collision(_with=obstacle):
+                            pass
+
+                    if self.field.snake.segment_base.is_collision(_with=self.field.apple):
+                        self.field.apple.set_position(x=None, y=None)
+
+            self.field.draw(self.screen)
+
             self.clock.tick(Game.fps)
+            pygame.display.update()
             self.screen.fill((0, 0, 0))
 
 if __name__ == "__main__":
