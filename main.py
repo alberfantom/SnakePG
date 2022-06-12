@@ -52,72 +52,52 @@ class Apple(Structure):
     def randomize_coordinates(self):
         self.set_position(x=None, y=None)
 
+        # TODO: recursion.
+        for level0_key, level0_value in self.field.structures.items():
+            if isinstance(level0_value, dict):
+                for level1_key, level1_value in level0_value.items():
+                    if self.is_collision(_with=level1_value):
+                        self.randomize_coordinates()
+
+            else:
+                if self.is_collision(_with=level0_value):
+                    self.randomize_coordinates()
+
 class Obstacle(Structure):
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
         field = field
 
-class Snake:
+class Snake(Structure):
     # TODO: from 1 to 10 (for example)
-    velocity_in_millsecond = 235
-
-    class SegmentBase(Structure):
-        def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
-            super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
-            self.field = field
-
-            self._offset = pygame.math.Vector2(0, 0)
-
-        def set_offset(self, event):
-            if event.key == pygame.K_UP:
-                self._offset = pygame.math.Vector2(0, -(Field._cell_size))
-
-            elif event.key == pygame.K_LEFT:
-                self._offset = pygame.math.Vector2(-(Field._cell_size), 0)
-
-            elif event.key == pygame.K_DOWN:
-                self._offset = pygame.math.Vector2(0, +(Field._cell_size))
-
-            elif event.key == pygame.K_RIGHT:
-                self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
-
-        def shift(self, offset=None):
-            self.coordinates += self._offset
-
-    class Segment(Structure):
-        def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
-            super().__init__(self, start_x=start_x, start_y=start_y, texture_path=texture_path)
-            self.field = field
+    velocity_in_millsecond = 175
 
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
-        self.segment_base = Snake.SegmentBase(start_x=start_x, start_y=start_y, texture_path=texture_path)
-        # TODO: all segment_base and segment in one list
+        super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
         self.field = field
 
+        self._offset = pygame.math.Vector2(0, 0)
 
-    def shift(self):
-        self.segment_base.shift(offset=self.segment_base._offset)
+    def set_offset(self, event):
+        if event.key == pygame.K_UP:
+            self._offset = pygame.math.Vector2(0, -(Field._cell_size))
+
+        elif event.key == pygame.K_LEFT:
+            self._offset = pygame.math.Vector2(-(Field._cell_size), 0)
+
+        elif event.key == pygame.K_DOWN:
+            self._offset = pygame.math.Vector2(0, +(Field._cell_size))
+
+        elif event.key == pygame.K_RIGHT:
+            self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
+
+    def shift(self, offset=None):
+        self.coordinates += self._offset
     
     def draw(self, surface):
-        surface.blit(self.segment_base.surface, self.segment_base.coordinates)
+        surface.blit(self.surface, self.coordinates)
 
 class Field:
-    # init_map = ["O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O * A * * * O O O O O",
-    #             "O O O O O * * * * * O O O O O",
-    #             "O O O O O * * * S * O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",
-    #             "O O O O O O O O O O O O O O O",]
-
     init_map = ["O O O * * * * O O O",
                 "O * * * * * * * * O",
                 "O * * * * S * * * O",
@@ -208,10 +188,10 @@ class Game:
                         pygame.quit()
                         sys.exit()
                     
-                    self.field.structures["snake"].segment_base.set_offset(event)
+                    self.field.structures["snake"].set_offset(event)
                 
                 elif event.type == pygame.USEREVENT:
-                    self.field.structures["snake"].shift()
+                    self.field.structures["snake"].shift(offset=self.field.structures["snake"]._offset)
 
             self.field.draw(self.screen)
 
