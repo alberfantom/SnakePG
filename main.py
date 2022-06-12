@@ -1,3 +1,4 @@
+import struct
 import pygame, sys
 
 import random, time
@@ -28,7 +29,6 @@ class Structure:
 
     def set_texture(self, texture_path=None):
         if not texture_path:
-            # TODO: 32x32, but not 16x16
             self.surface = pygame.image.load("sources\\textures\\error.png")
 
         else:
@@ -51,13 +51,6 @@ class Apple(Structure):
 
     def randomize_coordinates(self):
         self.set_position(x=None, y=None)
-
-        for obstacle in self.field.obstacles:
-            if obstacle.coordinates == self.coordinates:
-                self.randomize_coordinates()
-
-        if self.field.snake.segment_base.coordinates == self.coordinates:
-            self.randomize_coordinates()
 
 class Obstacle(Structure):
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
@@ -109,59 +102,83 @@ class Snake:
         surface.blit(self.segment_base.surface, self.segment_base.coordinates)
 
 class Field:
-    init_map = ["O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O * A * * * O O O O O",
-                "O O O O O * * * * * O O O O O",
-                "O O O O O * * * S * O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",
-                "O O O O O O O O O O O O O O O",]
+    # init_map = ["O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O * A * * * O O O O O",
+    #             "O O O O O * * * * * O O O O O",
+    #             "O O O O O * * * S * O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",
+    #             "O O O O O O O O O O O O O O O",]
+
+    init_map = ["O O O * * * * O O O",
+                "O * * * * * * * * O",
+                "O * * * * S * * * O",
+                "* * * * * * * * * *",
+                "* * * * A * * * * *",
+                "* * * * * * * * * *",
+                "O * * * * * * * * O",
+                "O * * * * * * * * O",
+                "O O O * * * * O O O"]
+
+    structures = [("O", "obstacel", Obstacle),
+                  ("S", "snake", Snake),
+                  ("A", "apple", Apple)]
 
     for row in range(len(init_map)):
         init_map[row] = init_map[row].replace(" ", "")
 
     _cell_size = 32
 
-    width = len(init_map) * _cell_size
-    height = len(init_map[0]) * _cell_size
+    height = len(init_map) * _cell_size
+    width = len(init_map[0]) * _cell_size
     
     def __init__(self):
-        self.obstacles = list()
-
-        self.apple = None
-        self.snake = None
+        self.structures = dict()
 
         for row in range(len(Field.init_map)):
             for column in range(len(Field.init_map[0])):
                 designation = Field.init_map[row][column]
 
-                if designation == "O":
-                    self.obstacles.append(Obstacle(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None, field=self))
+                for short_name_of_structure, full_name_of_structure, class_of_structure in Field.structures:
+                    if short_name_of_structure == designation:
+                        structure = class_of_structure(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path="sources\\textures\\obstacle.png", field=self)
 
-                elif designation == "A":
-                    self.apple = Apple(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None, field=self)
+                        if not self.structures.get(full_name_of_structure) and not self.structures.get(f"{full_name_of_structure}s"):
+                            self.structures[full_name_of_structure] = structure
+                            self.structures[full_name_of_structure].number = 0
 
-                elif designation == "S":
-                    self.snake = Snake(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=None, field=self)
+                        elif self.structures.get(full_name_of_structure) and not self.structures.get(f"{full_name_of_structure}s"):  
+                            self.structures[f"{full_name_of_structure}s"] = dict()
+        
+                            structure0 = self.structures.pop(full_name_of_structure)
+                            self.structures[f"{full_name_of_structure}s"][f"{full_name_of_structure}{structure0.number}"] = structure0
+
+                            structure.number = structure0.number + 1
+                            self.structures[f"{full_name_of_structure}s"][f"{full_name_of_structure}{structure.number}"] = structure
+
+                        elif not self.structures.get(full_name_of_structure) and self.structures.get(f"{full_name_of_structure}s"):
+                            structure.number = list(self.structures[f"{full_name_of_structure}s"].values())[-1].number + 1
+                            self.structures[f"{full_name_of_structure}s"][f"{full_name_of_structure}{structure.number}"] = structure
+                        
+                        break
 
     def draw(self, surface):
-        if self.obstacles:
-            for obstacle in self.obstacles:
-                obstacle.draw(surface)
+        # TODO: recursion.
+        for level0_key, level0_value in self.structures.items():
+            if isinstance(level0_value, dict):
+                for level1_key, level1_value in level0_value.items():
+                    level1_value.draw(surface)
 
-        if self.apple:
-            self.apple.draw(surface)
-        
-        if self.snake:
-            self.snake.draw(surface)
+            else:
+                level0_value.draw(surface)
 
 class Game:
     caption = "Snake"
@@ -191,17 +208,10 @@ class Game:
                         pygame.quit()
                         sys.exit()
                     
-                    self.field.snake.segment_base.set_offset(event)
+                    self.field.structures["snake"].segment_base.set_offset(event)
                 
                 elif event.type == pygame.USEREVENT:
-                    self.field.snake.shift()
-
-                    for obstacle in self.field.obstacles:
-                        if self.field.snake.segment_base.is_collision(_with=obstacle):
-                            pass
-
-                    if self.field.snake.segment_base.is_collision(_with=self.field.apple):
-                        self.field.apple.randomize_coordinates()
+                    self.field.structures["snake"].shift()
 
             self.field.draw(self.screen)
 
