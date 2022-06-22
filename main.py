@@ -1,4 +1,3 @@
-import struct
 import pygame, sys
 
 import random, time
@@ -41,12 +40,11 @@ class Structure:
     def copy(self):
         return Structure(start_x=self.coordinates.x, start_y=self.coordinates.y, texture_path=self.texture_path)
     
-    def is_collision(self, _with=None):
-        if _with:
-            if self.coordinates == _with.coordinates:
-                return True
-            
-            return False
+    def is_collision(self, _with=None) -> bool:
+        if self.coordinates == _with.coordinates:
+            return True
+
+        return False
 
     def draw(self, surface):
         surface.blit(self.surface, self.coordinates)
@@ -59,12 +57,13 @@ class Apple(Structure):
     def randomize_coordinates(self):
         self.set_coordinates(x=None, y=None)
 
-        for name_of_obstacle, obstacle in self.field.structures["obstacles"].items():
+        for obstacle in self.field.structures["obstacles"].values():
             if self.is_collision(_with=obstacle):
                 self.randomize_coordinates()
 
-        if self.is_collision(_with=self.field.structures["snake"].segments[0]):
-            self.randomize_coordinates()
+        for segment in self.field.structures["snake"].segments:
+            if self.is_collision(_with=segment):
+                self.randomize_coordinates()
 
 class Obstacle(Structure):
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
@@ -72,6 +71,9 @@ class Obstacle(Structure):
         field = field
 
 class Snake(Structure):
+    def get_random_offset():
+        return random.choice(list(Snake._offsets.values()))
+    
     # TODO: from 1 to 10 (for example)
     velocity_in_millsecond = 175
 
@@ -79,12 +81,27 @@ class Snake(Structure):
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         self.field = field
 
+        self._offsets = {
+            "up": pygame.math.Vector2(0, +1 * self.field._cell_size),
+            "right": pygame.math.Vector2(+1 * self.field._cell_size, 0),
+            "down": pygame.math.Vector2(0, -1 * self.field._cell_size),
+            "left": pygame.math.Vector2(-1 * self.field._cell_size, 0)
+        }
+
         self.segments = list()
 
-        init_segment = Structure(start_x=start_x, start_y=start_y, texture_path=texture_path)
+        init_segment_base = Structure(start_x=start_x, start_y=start_y, texture_path=texture_path)
+        self.segments.append(init_segment_base)
+
+        random_offset = self.get_random_offset()
+        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=None)
         self.segments.append(init_segment)
-        
+
         self._offset = pygame.math.Vector2(0, 0)
+        self.is_static = False
+
+    def get_random_offset(self):
+        return random.choice(list(self._offsets.values()))
         
     def set_offset(self, event):
         # TODO: adjust to two segments.
@@ -101,20 +118,33 @@ class Snake(Structure):
             self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
 
     def shift(self, add_segment=False):
-        copy_segment = self.segments[0].copy()
-        copy_segment.coordinates += self._offset
+        # TODO: if not is_static.
+        if self._offset.xy != (0, 0):
+            self.segments.reverse()
+            
+            copy_segment = None
+            
+            if add_segment:
+                copy_segment = self.segments[0].copy()
 
-        if add_segment:
-            self.segments = [copy_segment] + self.segments
+            for index in range(len(self.segments)):
+                if index == len(self.segments) - 1:
+                    self.segments[index].coordinates += self._offset
 
-        else:
-            self.segments = [copy_segment] + self.segments[:-1]
+                else:
+                    self.segments[index].coordinates = self.segments[index + 1].coordinates.xy
+
+            if copy_segment:
+                self.segments.insert(0, copy_segment)
+
+            self.segments.reverse()
 
     def draw(self, surface):
         for segment in self.segments:
             surface.blit(segment.surface, segment.coordinates)
 
 class Field:
+    # TODO: what will the second segment do, if there is an apple next to it.
     init_map = ["O O O * * * * O O O",
                 "O * * * * * * * * O",
                 "O * * * * S * * * O",
@@ -206,15 +236,22 @@ class Game:
                         pygame.quit()
                         sys.exit()
                     
-                    self.field.structures["snake"].set_offset(event)
+                    if not self.field.structures["snake"].is_static:
+                        self.field.structures["snake"].set_offset(event)
                 
+                # TODO: update method for snake.
                 elif event.type == pygame.USEREVENT:
-                    if self.field.structures["apple"].coordinates != self.field.structures["snake"].segments[0].coordinates + self.field.structures["snake"]._offset:
-                        self.field.structures["snake"].shift(add_segment=False)
-                    
-                    else:
-                        self.field.structures["snake"].shift(add_segment=True)
-                        self.field.structures["apple"].randomize_coordinates()
+                    if not self.field.structures["snake"].is_static:
+                        if self.field.structures["apple"].coordinates != self.field.structures["snake"].segments[0].coordinates + self.field.structures["snake"]._offset:
+                            self.field.structures["snake"].shift(add_segment=False)
+                        
+                        else:
+                            self.field.structures["snake"].shift(add_segment=True)
+                            self.field.structures["apple"].randomize_coordinates()
+
+                        # for obstacle in self.field.structures["obstacles"].values():
+                        #     if obstacle.is_collision(_with=self.field.structures["snake"].segments[0]):
+                        #         print(1)
 
             self.field.draw(self.screen)
 
