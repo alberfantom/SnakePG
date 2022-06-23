@@ -2,6 +2,7 @@ import pygame, sys
 
 import random, time
 
+# TODO: generalized is_collision (Structure.is_collision())
 class Structure:
     # TODO: start_x: int, start_y: int and coordinates: Vector2.
     def __init__(self, start_x=None, start_y=None, texture_path=None):
@@ -26,7 +27,7 @@ class Structure:
 
         else:
             # TODO: rounding y to the nearest, not to the minimum.
-            self.coordinates.y = y - (y % Field._cell_size)
+            self.coordinates.y = y - (y % Field._cell_size) 
 
     def set_texture(self, texture_path=None):
         self.texture_path = texture_path
@@ -50,6 +51,8 @@ class Structure:
         surface.blit(self.surface, self.coordinates)
 
 class Apple(Structure):
+    texture_path = None
+
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
         self.field = field
@@ -66,18 +69,21 @@ class Apple(Structure):
                 self.randomize_coordinates()
 
 class Obstacle(Structure):
+    texture_path = "sources\\textures\\obstacle.png"
+
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
         field = field
 
 class Snake(Structure):
-    def get_random_offset():
-        return random.choice(list(Snake._offsets.values()))
-    
-    # TODO: from 1 to 10 (for example)
-    velocity_in_millsecond = 175
+    # segment base.
+    texture_path = None
 
-    # TODO: appears from two segments.
+    texture_path_of_segment = None
+
+    # TODO: from 1 to 10 (for example)
+    velocity = 175 # in millsecond
+
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         self.field = field
 
@@ -94,9 +100,10 @@ class Snake(Structure):
         self.segments.append(init_segment_base)
 
         random_offset = self.get_random_offset()
-        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=None)
+        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_path_of_segment)
         self.segments.append(init_segment)
 
+        # self._offset change to tuple data type (not Vector2).
         self._offset = pygame.math.Vector2(0, 0)
         self.is_static = False
 
@@ -105,23 +112,27 @@ class Snake(Structure):
         
     def set_offset(self, event):
         # TODO: adjust to two segments.
-        if event.key == pygame.K_UP:
+        if event.key == pygame.K_UP and self._offset != (0, self.field._cell_size):
             self._offset = pygame.math.Vector2(0, -(Field._cell_size))
 
-        elif event.key == pygame.K_LEFT:
+        elif event.key == pygame.K_LEFT and self._offset != (self.field._cell_size, 0):
             self._offset = pygame.math.Vector2(-(Field._cell_size), 0)
 
-        elif event.key == pygame.K_DOWN:
+        elif event.key == pygame.K_DOWN and self._offset != (0, -self.field._cell_size):
             self._offset = pygame.math.Vector2(0, +(Field._cell_size))
 
-        elif event.key == pygame.K_RIGHT:
+        elif event.key == pygame.K_RIGHT and self._offset != (-self.field._cell_size, 0):
             self._offset = pygame.math.Vector2(+(Field._cell_size), 0)
 
-    def shift(self, add_segment=False):
+    def shift(self, add_segment=False, conversely=False):
         # TODO: if not is_static.
         if self._offset.xy != (0, 0):
-            self.segments.reverse()
-            
+            if not conversely:
+                self.segments.reverse()
+
+            else:
+                self._offset *= -1
+
             copy_segment = None
             
             if add_segment:
@@ -137,7 +148,11 @@ class Snake(Structure):
             if copy_segment:
                 self.segments.insert(0, copy_segment)
 
-            self.segments.reverse()
+            if not conversely:
+                self.segments.reverse()
+
+            else:
+                self._offset *= -1
 
     def draw(self, surface):
         for segment in self.segments:
@@ -148,8 +163,8 @@ class Field:
     init_map = ["O O O * * * * O O O",
                 "O * * * * * * * * O",
                 "O * * * * S * * * O",
+                "* * * * * A * * * *",
                 "* * * * * * * * * *",
-                "* * * * A * * * * *",
                 "* * * * * * * * * *",
                 "O * * * * * * * * O",
                 "O * * * * * * * * O",
@@ -169,6 +184,7 @@ class Field:
     width = len(init_map[0]) * _cell_size
     
     def __init__(self):
+        # TODO: self.structures (dict) into Field.structures (dict).
         self.structures = dict()
 
         for row in range(len(Field.init_map)):
@@ -177,7 +193,7 @@ class Field:
 
                 for short_name_of_structure, full_name_of_structure, class_of_structure in Field.structures:
                     if short_name_of_structure == designation:
-                        structure = class_of_structure(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path="sources\\textures\\obstacle.png", field=self)
+                        structure = class_of_structure(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=class_of_structure.texture_path, field=self)
 
                         if not self.structures.get(full_name_of_structure) and not self.structures.get(f"{full_name_of_structure}s"):
                             self.structures[full_name_of_structure] = structure
@@ -222,7 +238,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.snake_shift_event = pygame.USEREVENT
-        pygame.time.set_timer(self.snake_shift_event, Snake.velocity_in_millsecond)
+        pygame.time.set_timer(self.snake_shift_event, Snake.velocity)
 
     def loop_with_logic(self):
         while True:
@@ -249,9 +265,28 @@ class Game:
                             self.field.structures["snake"].shift(add_segment=True)
                             self.field.structures["apple"].randomize_coordinates()
 
-                        # for obstacle in self.field.structures["obstacles"].values():
-                        #     if obstacle.is_collision(_with=self.field.structures["snake"].segments[0]):
-                        #         print(1)
+                        for obstacle in self.field.structures["obstacles"].values():
+                            if obstacle.is_collision(_with=self.field.structures["snake"].segments[0]):
+                                self.field.structures["snake"].shift(conversely=True)
+                                self.field.structures["snake"].is_static = True
+                                # TODO: add (maybe) decorator.
+
+                        if self.field.structures["snake"].segments[0].coordinates.x == self.field.width:
+                            self.field.structures["snake"].segments[0].coordinates.x = 0
+
+                        elif self.field.structures["snake"].segments[0].coordinates.x == -self.field._cell_size:
+                            self.field.structures["snake"].segments[0].coordinates.x = self.field.width
+
+                        elif self.field.structures["snake"].segments[0].coordinates.y == self.field.height:
+                            self.field.structures["snake"].segments[0].coordinates.y = 0
+
+                        elif self.field.structures["snake"].segments[0].coordinates.y == -self.field._cell_size:
+                            self.field.structures["snake"].segments[0].coordinates.y = self.field.height
+                        
+                        for segment in self.field.structures["snake"].segments[2:]:
+                            if self.field.structures["snake"].segments[0].is_collision(_with=segment):
+                                self.field.structures["snake"].shift(conversely=True)
+                                self.field.structures["snake"].is_static = True
 
             self.field.draw(self.screen)
 
