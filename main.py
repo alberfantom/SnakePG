@@ -1,3 +1,4 @@
+from cgitb import text
 import pygame, sys
 
 import random, time
@@ -51,7 +52,9 @@ class Structure:
         surface.blit(self.surface, self.coordinates)
 
 class Apple(Structure):
-    texture_path = None
+    texture_paths = {
+        "apple": None
+    }
 
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
@@ -69,17 +72,19 @@ class Apple(Structure):
                 self.randomize_coordinates()
 
 class Obstacle(Structure):
-    texture_path = "sources\\textures\\obstacle.png"
+    texture_paths = {
+        "obstacle": "sources\\textures\\obstacle.png"
+    }
 
     def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
         super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
         field = field
 
-class Snake(Structure):
-    # segment base.
-    texture_path = None
-
-    texture_path_of_segment = None
+class Snake(Structure): 
+    texture_paths = {
+        "snake": "sources\\textures\\snake\\segment_base.png",
+        "segment": "sources\\textures\\snake\\segment.png"
+    }
 
     # TODO: from 1 to 10 (for example)
     velocity = 175 # in millsecond
@@ -96,13 +101,14 @@ class Snake(Structure):
 
         self.segments = list()
 
+        random_offset = self.get_random_offset()
+
         init_segment_base = Structure(start_x=start_x, start_y=start_y, texture_path=texture_path)
         self.segments.append(init_segment_base)
 
-        random_offset = self.get_random_offset()
-        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_path_of_segment)
+        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_paths["segment"])
         self.segments.append(init_segment)
-
+        
         # self._offset change to tuple data type (not Vector2).
         self._offset = pygame.math.Vector2(0, 0)
         self.is_static = False
@@ -160,15 +166,31 @@ class Snake(Structure):
 
 class Field:
     # TODO: what will the second segment do, if there is an apple next to it.
-    init_map = ["O O O * * * * O O O",
-                "O * * * * * * * * O",
-                "O * * * * S * * * O",
-                "* * * * * A * * * *",
-                "* * * * * * * * * *",
-                "* * * * * * * * * *",
-                "O * * * * * * * * O",
-                "O * * * * * * * * O",
-                "O O O * * * * O O O"]
+    init_map = ["* * * * * * * * * * O O * * * * * * * * * * * * *",
+                "* * * * * O * * * O * * O * O * O * * * * * * * *",
+                "* * * * O * O * * O * * O * * O * * * * * * * * *",
+                "* * * O * * * O * * O O * * O * O * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * A * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * S * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",
+                "* * * * * * * * * * * * * * * * * * * * * * * * *",]
 
     # TODO: structure and structures, obstacle and not obstacales, but obstacles (just example). 
     structures = [("O", "obstacle", Obstacle),
@@ -193,7 +215,7 @@ class Field:
 
                 for short_name_of_structure, full_name_of_structure, class_of_structure in Field.structures:
                     if short_name_of_structure == designation:
-                        structure = class_of_structure(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=class_of_structure.texture_path, field=self)
+                        structure = class_of_structure(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=class_of_structure.texture_paths[full_name_of_structure], field=self)
 
                         if not self.structures.get(full_name_of_structure) and not self.structures.get(f"{full_name_of_structure}s"):
                             self.structures[full_name_of_structure] = structure
