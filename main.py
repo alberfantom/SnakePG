@@ -98,6 +98,7 @@ class Snake(Structure):
         }
 
         self.segments = list()
+        self.past_segments = list()
 
         random_offset = self.get_random_offset()
 
@@ -131,6 +132,8 @@ class Snake(Structure):
     def shift(self, add_segment=False, conversely=False):
         # TODO: if not is_static.
         if self._offset.xy != (0, 0):
+            self.past_segments = self.segments.copy()
+
             if not conversely:
                 self.segments.reverse()
 
@@ -157,6 +160,38 @@ class Snake(Structure):
 
             else:
                 self._offset *= -1
+        
+    def logic_at_the_obstacle(self):
+        for obstacle in Field.structures["obstacles"].values():
+            if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
+                Field.structures["snake"].shift(conversely=True)
+                Field.structures["snake"].is_static = True
+
+    def logic_at_the_segment(self):
+        for segment in  self.segments[2:]:
+            if  self.segments[0].is_collision(_with=segment):
+                 self.shift(conversely=True)
+                 self.is_static = True
+    
+    def logic_at_the_border(self):
+        if  self.segments[0].coordinates.x == Field.width:
+             self.segments[0].coordinates.x = 0
+
+        elif  self.segments[0].coordinates.x == -Field.cell_size:
+             self.segments[0].coordinates.x = Field.width
+
+        elif  self.segments[0].coordinates.y == Field.height:
+             self.segments[0].coordinates.y = 0
+
+        elif  self.segments[0].coordinates.y == -Field.cell_size:
+             self.segments[0].coordinates.y = Field.height
+
+    def logic_at_the_apple(self):
+        if self.segments[0].is_collision(_with=Field.structures["apple"]):
+            Field.structures["apple"].randomize_coordinates()
+            
+            self.segments = self.past_segments
+            self.shift(add_segment=True)
 
     def draw(self, surface):
         for segment in self.segments:
@@ -258,37 +293,12 @@ class Game:
                 
                 # TODO: update method for snake.
                 elif event.type == pygame.USEREVENT:
-                    print(Field.structures)
-                    if not Field.structures["snake"].is_static:
-                        if Field.structures["apple"].coordinates != Field.structures["snake"].segments[0].coordinates + Field.structures["snake"]._offset:
-                            Field.structures["snake"].shift(add_segment=False)
-                        
-                        else:
-                            Field.structures["snake"].shift(add_segment=True)
-                            Field.structures["apple"].randomize_coordinates()
+                    self.field.structures["snake"].shift()
 
-                        for obstacle in Field.structures["obstacles"].values():
-                            if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
-                                Field.structures["snake"].shift(conversely=True)
-                                Field.structures["snake"].is_static = True
-                                # TODO: add (maybe) decorator.
-
-                        if Field.structures["snake"].segments[0].coordinates.x == Field.width:
-                            Field.structures["snake"].segments[0].coordinates.x = 0
-
-                        elif Field.structures["snake"].segments[0].coordinates.x == -Field.cell_size:
-                            Field.structures["snake"].segments[0].coordinates.x = Field.width
-
-                        elif Field.structures["snake"].segments[0].coordinates.y == Field.height:
-                            Field.structures["snake"].segments[0].coordinates.y = 0
-
-                        elif Field.structures["snake"].segments[0].coordinates.y == -Field.cell_size:
-                            Field.structures["snake"].segments[0].coordinates.y = Field.height
-                        
-                        for segment in Field.structures["snake"].segments[2:]:
-                            if Field.structures["snake"].segments[0].is_collision(_with=segment):
-                                Field.structures["snake"].shift(conversely=True)
-                                Field.structures["snake"].is_static = True
+                    self.field.structures["snake"].logic_at_the_obstacle()
+                    self.field.structures["snake"].logic_at_the_segment()
+                    self.field.structures["snake"].logic_at_the_border()
+                    self.field.structures["snake"].logic_at_the_apple()
 
             self.field.draw(self.screen)
 
