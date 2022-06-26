@@ -1,4 +1,3 @@
-from cgitb import text
 import pygame, sys
 
 import random, time
@@ -6,14 +5,14 @@ import random, time
 # TODO: generalized is_collision (Structure.is_collision())
 class Structure:
     # TODO: start_x: int, start_y: int and coordinates: Vector2.
-    def __init__(self, start_x=None, start_y=None, texture_path=None):
+    def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
         self.coordinates = pygame.math.Vector2(0, 0)
 
         self.set_texture(texture_path=texture_path)
-        self.set_coordinates(x=start_x, y=start_y)
+        self.set_coordinates(x=start_x, y=start_y, coordinates=start_coordinates)
 
     # TODO: start_x: int, start_y: int and coordinates: Vector2.
-    def set_coordinates(self, x=None, y=None):
+    def set_coordinates(self, x=None, y=None, coordinates=None) -> None:
         if not x and not isinstance(x, (int, float)):
             random_x = random.randrange(Field._cell_size, Field.width, Field._cell_size)
             self.coordinates.x = random_x
@@ -29,6 +28,9 @@ class Structure:
         else:
             # TODO: rounding y to the nearest, not to the minimum.
             self.coordinates.y = y - (y % Field._cell_size) 
+
+        if not x and not y and coordinates:
+            self.coordinates = pygame.math.Vector2(coordinates)
 
     def set_texture(self, texture_path=None):
         self.texture_path = texture_path
@@ -56,8 +58,8 @@ class Apple(Structure):
         "apple": None
     }
 
-    def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
-        super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
+    def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None, field=None):
+        super().__init__(start_x=start_x, start_y=start_y, start_coordinates=start_coordinates, texture_path=texture_path)
         self.field = field
 
     def randomize_coordinates(self):
@@ -73,23 +75,23 @@ class Apple(Structure):
 
 class Obstacle(Structure):
     texture_paths = {
-        "obstacle": "sources\\textures\\obstacle.png"
+        "obstacle": None
     }
 
-    def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
-        super().__init__(start_x=start_x, start_y=start_y, texture_path=texture_path)
+    def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None, field=None):
+        super().__init__(start_x=start_x, start_y=start_y, start_coordinates=start_coordinates, texture_path=texture_path)
         field = field
 
 class Snake(Structure): 
     texture_paths = {
-        "snake": "sources\\textures\\snake\\segment_base.png",
-        "segment": "sources\\textures\\snake\\segment.png"
+        "snake": None,
+        "segment": None
     }
 
     # TODO: from 1 to 10 (for example)
     velocity = 175 # in millsecond
 
-    def __init__(self, start_x=None, start_y=None, texture_path=None, field=None):
+    def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None, field=None):
         self.field = field
 
         self._offsets = {
@@ -103,7 +105,7 @@ class Snake(Structure):
 
         random_offset = self.get_random_offset()
 
-        init_segment_base = Structure(start_x=start_x, start_y=start_y, texture_path=texture_path)
+        init_segment_base = Structure(start_coordinates=start_coordinates, texture_path=texture_path)
         self.segments.append(init_segment_base)
 
         init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_paths["segment"])
@@ -166,39 +168,20 @@ class Snake(Structure):
 
 class Field:
     # TODO: what will the second segment do, if there is an apple next to it.
-    init_map = ["* * * * * * * * * * O O * * * * * * * * * * * * *",
-                "* * * * * O * * * O * * O * O * O * * * * * * * *",
-                "* * * * O * O * * O * * O * * O * * * * * * * * *",
-                "* * * O * * * O * * O O * * O * O * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * A * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * S * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",
-                "* * * * * * * * * * * * * * * * * * * * * * * * *",]
-
-    # TODO: structure and structures, obstacle and not obstacales, but obstacles (just example). 
-    structures = [("O", "obstacle", Obstacle),
-                  ("S", "snake", Snake),
-                  ("A", "apple", Apple)]
+    init_map = ["O O * * * O O",
+                "O * * * * * O",
+                "* * * A * * *",
+                "* * * * * * *",
+                "* * * S * * *",
+                "O * * * * * O",
+                "O O * * * O O"]
 
     for row in range(len(init_map)):
         init_map[row] = init_map[row].replace(" ", "")
+
+    structures = [("O", "obstacle", Obstacle),
+                  ("S", "snake", Snake),
+                  ("A", "apple", Apple)]
 
     _cell_size = 32
 
@@ -215,7 +198,7 @@ class Field:
 
                 for short_name_of_structure, full_name_of_structure, class_of_structure in Field.structures:
                     if short_name_of_structure == designation:
-                        structure = class_of_structure(start_x=column * Field._cell_size, start_y=row * Field._cell_size, texture_path=class_of_structure.texture_paths[full_name_of_structure], field=self)
+                        structure = class_of_structure(start_coordinates=(column * Field._cell_size, row * Field._cell_size), texture_path=class_of_structure.texture_paths[full_name_of_structure], field=self)
 
                         if not self.structures.get(full_name_of_structure) and not self.structures.get(f"{full_name_of_structure}s"):
                             self.structures[full_name_of_structure] = structure
@@ -319,3 +302,5 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.loop_with_logic()
+
+# TODO: GOD MODE
