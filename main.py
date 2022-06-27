@@ -86,8 +86,8 @@ class Snake(Structure):
         "segment": None
     }
 
-    # TODO: from 1 to 10 (for example)
-    velocity = 175 # in millsecond
+    velocity = 7 * 25 # in milliseconds 
+    assert velocity >= 25 and velocity <= 250
 
     def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
         self._offsets = {
@@ -159,7 +159,6 @@ class Snake(Structure):
                 if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
                     self.segments = self.past_segments
                     self.is_static = True
-
 
     def logic_at_the_segment(self):
         if not self.is_static:
@@ -259,7 +258,7 @@ class Field:
 
 class Game:
     caption = "Snake"
-    fps = 75
+    fps = 75 * 5
 
     def __init__(self):
         pygame.init()
