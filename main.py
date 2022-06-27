@@ -129,19 +129,15 @@ class Snake(Structure):
         elif event.key == pygame.K_RIGHT and self._offset != (-Field.cell_size, 0):
             self._offset = pygame.math.Vector2(+(Field.cell_size), 0)
 
-    def shift(self, add_segment=False, conversely=False):
-        # TODO: if not is_static.
-        if self._offset.xy != (0, 0):
-            self.past_segments = self.segments.copy()
+    def update_past_segments(self): 
+        self.past_segments = [segment.copy() for segment in self.segments]
 
-            if not conversely:
-                self.segments.reverse()
-
-            else:
-                self._offset *= -1
-
-            copy_segment = None
+    def shift(self, add_segment=False):
+        if not self.is_static and self._offset.xy != (0, 0):
+            self.update_past_segments()
             
+            self.segments.reverse()
+
             if add_segment:
                 copy_segment = self.segments[0].copy()
 
@@ -152,46 +148,45 @@ class Snake(Structure):
                 else:
                     self.segments[index].coordinates = self.segments[index + 1].coordinates.xy
 
-            if copy_segment:
+            if add_segment:
                 self.segments.insert(0, copy_segment)
 
-            if not conversely:
-                self.segments.reverse()
+            self.segments.reverse()
 
-            else:
-                self._offset *= -1
-        
     def logic_at_the_obstacle(self):
-        for obstacle in Field.structures["obstacles"].values():
-            if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
-                Field.structures["snake"].shift(conversely=True)
-                Field.structures["snake"].is_static = True
+        if not self.is_static:
+            for obstacle in Field.structures["obstacles"].values():
+                if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
+                    self.segments = self.past_segments
+                    self.is_static = True
+
 
     def logic_at_the_segment(self):
-        for segment in  self.segments[2:]:
-            if  self.segments[0].is_collision(_with=segment):
-                 self.shift(conversely=True)
-                 self.is_static = True
+        if not self.is_static:
+            for segment in  self.segments[2:]:
+                if  self.segments[0].is_collision(_with=segment):
+                    self.shift(conversely=True)
+                    self.is_static = True
     
     def logic_at_the_border(self):
-        if  self.segments[0].coordinates.x == Field.width:
-             self.segments[0].coordinates.x = 0
+        if not self.is_static:
+            if  self.segments[0].coordinates.x == Field.width:
+                self.segments[0].coordinates.x = 0
 
-        elif  self.segments[0].coordinates.x == -Field.cell_size:
-             self.segments[0].coordinates.x = Field.width
+            elif  self.segments[0].coordinates.x == -Field.cell_size:
+                self.segments[0].coordinates.x = Field.width
 
-        elif  self.segments[0].coordinates.y == Field.height:
-             self.segments[0].coordinates.y = 0
+            elif  self.segments[0].coordinates.y == Field.height:
+                self.segments[0].coordinates.y = 0
 
-        elif  self.segments[0].coordinates.y == -Field.cell_size:
-             self.segments[0].coordinates.y = Field.height
+            elif  self.segments[0].coordinates.y == -Field.cell_size:
+                self.segments[0].coordinates.y = Field.height
 
     def logic_at_the_apple(self):
-        if self.segments[0].is_collision(_with=Field.structures["apple"]):
-            Field.structures["apple"].randomize_coordinates()
-            
-            self.segments = self.past_segments
-            self.shift(add_segment=True)
+        if not self.is_static:
+            if self.segments[0].is_collision(_with=Field.structures["apple"]):
+                Field.structures["apple"].randomize_coordinates()
+                self.shift(add_segment=True)
 
     def draw(self, surface):
         for segment in self.segments:
@@ -199,13 +194,13 @@ class Snake(Structure):
 
 class Field:
     # TODO: what will the second segment do, if there is an apple next to it.
-    init_map = ["O O * * * O O",
-                "O * * * * * O",
-                "* * * A * * *",
-                "* * * * * * *",
-                "* * * S * * *",
-                "O * * * * * O",
-                "O O * * * O O"]
+    init_map = ["O O * * * * * O O",
+                "O * * * * * * * O",
+                "* * * * A * * * *",
+                "* * * * * * * * *",
+                "* * * * S * * * *",
+                "O * * * * * * * O",
+                "O O * * * * * O O"]
 
     for row in range(len(init_map)):
         init_map[row] = init_map[row].replace(" ", "")
