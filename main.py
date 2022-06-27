@@ -165,7 +165,7 @@ class Snake(Structure):
         if not self.is_static:
             for segment in  self.segments[2:]:
                 if  self.segments[0].is_collision(_with=segment):
-                    self.shift(conversely=True)
+                    self.segments = self.past_segments
                     self.is_static = True
     
     def logic_at_the_border(self):
@@ -196,9 +196,11 @@ class Field:
     # TODO: what will the second segment do, if there is an apple next to it.
     init_map = ["O O * * * * * O O",
                 "O * * * * * * * O",
+                "* * * * * * * * *",
                 "* * * * A * * * *",
                 "* * * * * * * * *",
                 "* * * * S * * * *",
+                "* * * * * * * * *",
                 "O * * * * * * * O",
                 "O O * * * * * O O"]
 
