@@ -86,8 +86,8 @@ class Snake(Structure):
         "segment": None
     }
 
-    velocity = 7 * 25 # in milliseconds 
-    assert velocity >= 25 and velocity <= 250
+    speed = 7 * 25 # in milliseconds 
+    assert speed >= 25 and speed <= 250
 
     def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
         self._offsets = {
@@ -270,7 +270,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.snake_shift_event = pygame.USEREVENT
-        pygame.time.set_timer(self.snake_shift_event, Snake.velocity)
+        pygame.time.set_timer(self.snake_shift_event, Snake.speed)
 
     def loop_with_logic(self):
         while True:
