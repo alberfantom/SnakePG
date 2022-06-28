@@ -116,7 +116,6 @@ class Snake(Structure):
         return random.choice(list(self._offsets.values()))
         
     def set_offset(self, event):
-        # TODO: adjust to two segments.
         if event.key == pygame.K_UP and self._offset != (0, Field.cell_size):
             self._offset = pygame.math.Vector2(0, -(Field.cell_size))
 
@@ -194,13 +193,13 @@ class Snake(Structure):
 class Field:
     # TODO: what will the second segment do, if there is an apple next to it.
     init_map = ["O O * * * * * O O",
-                "O * * * * * * * O",
+                "O * * * A * * * O",
                 "* * * * * * * * *",
-                "* * * * A * * * *",
                 "* * * * * * * * *",
-                "* * * * S * * * *",
                 "* * * * * * * * *",
-                "O * * * * * * * O",
+                "* * * * * * * * *",
+                "* * * * * * * * *",
+                "O * * * S * * * O",
                 "O O * * * * * O O"]
 
     for row in range(len(init_map)):
@@ -218,7 +217,6 @@ class Field:
     width = len(init_map[0]) * cell_size
     
     def __init__(self):
-        # TODO: self.structures (dict) into Field.structures (dict).
         for row in range(len(Field.init_map)):
             for column in range(len(Field.init_map[0])):
                 designation = Field.init_map[row][column]
@@ -246,15 +244,14 @@ class Field:
                         
                         break
 
-    def draw(self, surface):
-        # TODO: recursion.
-        for level0_key, level0_value in Field.structures.items():
-            if isinstance(level0_value, dict):
-                for level1_key, level1_value in level0_value.items():
-                    level1_value.draw(surface)
+    def draw(self, screen=None, structures=None) -> None:
+        for structure in structures.values():
+            if isinstance(structure, Structure):
+                structure.draw(surface=screen)
 
             else:
-                level0_value.draw(surface)
+                # structure will dict
+                self.draw(screen=screen, structures=structure)
 
 class Game:
     caption = "Snake"
@@ -287,7 +284,6 @@ class Game:
                     if not Field.structures["snake"].is_static:
                         Field.structures["snake"].set_offset(event)
                 
-                # TODO: update method for snake.
                 elif event.type == pygame.USEREVENT:
                     self.field.structures["snake"].shift()
 
@@ -296,7 +292,7 @@ class Game:
                     self.field.structures["snake"].logic_at_the_border()
                     self.field.structures["snake"].logic_at_the_apple()
 
-            self.field.draw(self.screen)
+            self.field.draw(screen=self.screen, structures=Field.structures)
 
             self.clock.tick(Game.fps)
             pygame.display.update()
@@ -305,5 +301,3 @@ class Game:
 if __name__ == "__main__":
     game = Game()
     game.loop_with_logic()
-
-# TODO: GOD MODE
