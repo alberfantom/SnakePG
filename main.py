@@ -2,16 +2,13 @@ import pygame, sys
 
 import random, time
 
-# TODO: generalized is_collision (Structure.is_collision())
 class Structure:
-    # TODO: start_x: int, start_y: int and coordinates: Vector2.
     def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
         self.coordinates = pygame.math.Vector2(0, 0)
 
         self.set_texture(texture_path=texture_path)
         self.set_coordinates(x=start_x, y=start_y, coordinates=start_coordinates)
 
-    # TODO: start_x: int, start_y: int and coordinates: Vector2.
     def set_coordinates(self, x=None, y=None, coordinates=None) -> None:
         if not x and not isinstance(x, (int, float)):
             random_x = random.randrange(Field.cell_size, Field.width, Field.cell_size)
@@ -107,9 +104,8 @@ class Snake(Structure):
 
         init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_paths["segment"])
         self.segments.append(init_segment)
-        
-        # self._offset change to tuple data type (not Vector2).
-        self._offset = pygame.math.Vector2(0, 0)
+    
+        self._offset = (0, 0)
         self.is_static = False
 
     def get_random_offset(self):
@@ -132,7 +128,7 @@ class Snake(Structure):
         self.past_segments = [segment.copy() for segment in self.segments]
 
     def shift(self, add_segment=False):
-        if not self.is_static and self._offset.xy != (0, 0):
+        if not self.is_static and self._offset != (0, 0):
             self.update_past_segments()
             
             self.segments.reverse()
