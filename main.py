@@ -58,15 +58,21 @@ class Apple(Structure):
     def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
         super().__init__(start_x=start_x, start_y=start_y, start_coordinates=start_coordinates, texture_path=texture_path)
 
+    # TODO: make sure that the apple occupies a new place among the free ones, and does not go through the already occupied ones.
     def randomize_coordinates(self):
         self.set_coordinates(x=None, y=None)
-
-        for obstacle in Field.structures["obstacles"].values():
-            if self.is_collision(_with=obstacle):
+        
+        for obstacle in Field.get_instances_of(_class_name="Obstacle"):
+            if obstacle.is_collision(_with=self):
                 self.randomize_coordinates()
 
-        for segment in Field.structures["snake"].segments:
-            if self.is_collision(_with=segment):
+        for snake in Field.get_instances_of(_class_name="Snake"):
+            for segment in snake.segments:
+                if segment.is_collision(_with=self):
+                    self.randomize_coordinates()
+        
+        for apple in Field.get_instances_of(_class_name="Apple"):
+            if apple.is_collision(_with=self) and apple != self:
                 self.randomize_coordinates()
 
 class Obstacle(Structure):
@@ -150,7 +156,7 @@ class Snake(Structure):
 
     def logic_at_the_obstacle(self):
         if not self.is_static:
-            for obstacle in Field.structures["obstacles"].values():
+            for obstacle in Field.get_instances_of(_class_name="obstacle"):
                 if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
                     self.segments = self.past_segments
                     self.is_static = True
@@ -158,7 +164,7 @@ class Snake(Structure):
     def logic_at_the_segment(self):
         if not self.is_static:
             for segment in  self.segments[2:]:
-                if  self.segments[0].is_collision(_with=segment):
+                if self.segments[0].is_collision(_with=segment):
                     self.segments = self.past_segments
                     self.is_static = True
     
@@ -178,28 +184,28 @@ class Snake(Structure):
 
     def logic_at_the_apple(self):
         if not self.is_static:
-            if self.segments[0].is_collision(_with=Field.structures["apple"]):
-                Field.structures["apple"].randomize_coordinates()
-                self.shift(add_segment=True)
+            for apple in Field.get_instances_of(_class_name="Apple"):
+                if self.segments[0].is_collision(_with=apple):
+                    apple.randomize_coordinates()
+                    self.shift(add_segment=True)
 
     def draw(self, surface):
         for segment in self.segments:
             surface.blit(segment.surface, segment.coordinates)
 
 class Field:
-    # TODO: what will the second segment do, if there is an apple next to it.
-    init_map = ["O O * * * * * O O",
-                "O * * * A * * * O",
-                "* * * * * * * * *",
-                "* * * * * * * * *",
-                "* * * * * * * * *",
-                "* * * * * * * * *",
-                "* * * * * * * * *",
-                "O * * * S * * * O",
-                "O O * * * * * O O"]
+    default_field = ["O O * * * * * O O",
+                     "O * * * A * * * O",
+                     "* * * * * A * * *",
+                     "* * * * * * * * *",
+                     "* * * * * * * * *",
+                     "* * * * * * * * *",
+                     "* * * * * * * * *",
+                     "O * * * S * * * O",
+                     "O O * * * * * O O"]
 
-    for row in range(len(init_map)):
-        init_map[row] = init_map[row].replace(" ", "")
+    for row in range(len(default_field)):
+        default_field[row] = default_field[row].replace(" ", "")
 
     structures_of_map = [("O", "obstacle", Obstacle),
                          ("S", "snake", Snake),
@@ -209,13 +215,24 @@ class Field:
 
     cell_size = 32
 
-    height = len(init_map) * cell_size
-    width = len(init_map[0]) * cell_size
-    
-    def __init__(self):
-        for row in range(len(Field.init_map)):
-            for column in range(len(Field.init_map[0])):
-                designation = Field.init_map[row][column]
+    height = len(default_field) * cell_size
+    width = len(default_field[0]) * cell_size
+
+    def get_instances_of(_class_name: str = None) -> list:
+        _class_name = _class_name.lower()
+
+        if f"{_class_name}s" in Field.structures:
+            return list(Field.structures[f"{_class_name}s"].values()) 
+
+        elif _class_name in Field.structures:
+            return [ Field.structures[_class_name] ]
+        
+        return [ ]
+
+    def __init__(self, init_field=default_field):
+        for row in range(len(init_field)):
+            for column in range(len(init_field[0])):
+                designation = init_field[row][column]
 
                 for short_name_of_structure, full_name_of_structure, class_of_structure in Field.structures_of_map:
                     if short_name_of_structure == designation:
@@ -242,12 +259,11 @@ class Field:
 
     def draw(self, screen=None, structures=None) -> None:
         for structure in structures.values():
-            if isinstance(structure, Structure):
-                structure.draw(surface=screen)
-
-            else:
-                # structure will dict
+            if isinstance(structure, dict):
                 self.draw(screen=screen, structures=structure)
+
+            elif isinstance(structure, Structure):
+                structure.draw(surface=screen)
 
 class Game:
     caption = "Snake"
@@ -277,16 +293,18 @@ class Game:
                         pygame.quit()
                         sys.exit()
                     
-                    if not Field.structures["snake"].is_static:
-                        Field.structures["snake"].set_offset(event)
+                    for snake in Field.get_instances_of(_class_name="Snake"):
+                        if not snake.is_static:
+                            snake.set_offset(event)
                 
                 elif event.type == pygame.USEREVENT:
-                    self.field.structures["snake"].shift()
+                    for snake in Field.get_instances_of(_class_name="Snake"):
+                        snake.shift()
 
-                    self.field.structures["snake"].logic_at_the_obstacle()
-                    self.field.structures["snake"].logic_at_the_segment()
-                    self.field.structures["snake"].logic_at_the_border()
-                    self.field.structures["snake"].logic_at_the_apple()
+                        snake.logic_at_the_obstacle()
+                        snake.logic_at_the_segment()
+                        snake.logic_at_the_border()
+                        snake.logic_at_the_apple()
 
             self.field.draw(screen=self.screen, structures=Field.structures)
 
