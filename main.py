@@ -118,17 +118,22 @@ class Snake(Structure):
         return random.choice(list(self._offsets.values()))
         
     def set_offset(self, event):
-        if event.key == pygame.K_UP and self._offset != (0, Field.cell_size):
-            self._offset = pygame.math.Vector2(0, -(Field.cell_size))
+        match event.key:
+            case pygame.K_UP:
+                if self._offset != (0, Field.cell_size):
+                    self._offset = pygame.math.Vector2(0, -(Field.cell_size))
 
-        elif event.key == pygame.K_LEFT and self._offset != (Field.cell_size, 0):
-            self._offset = pygame.math.Vector2(-(Field.cell_size), 0)
+            case pygame.K_LEFT:
+                if self._offset != (Field.cell_size, 0):
+                    self._offset = pygame.math.Vector2(-(Field.cell_size), 0)
 
-        elif event.key == pygame.K_DOWN and self._offset != (0, -Field.cell_size):
-            self._offset = pygame.math.Vector2(0, +(Field.cell_size))
-
-        elif event.key == pygame.K_RIGHT and self._offset != (-Field.cell_size, 0):
-            self._offset = pygame.math.Vector2(+(Field.cell_size), 0)
+            case pygame.K_DOWN:
+                if self._offset != (0, -Field.cell_size):
+                    self._offset = pygame.math.Vector2(0, +(Field.cell_size))
+            
+            case pygame.K_RIGHT:
+                if self._offset != (-Field.cell_size, 0):
+                    self._offset = pygame.math.Vector2(+(Field.cell_size), 0)
 
     def update_past_segments(self): 
         self.past_segments = [segment.copy() for segment in self.segments]
@@ -170,16 +175,16 @@ class Snake(Structure):
     
     def logic_at_the_border(self):
         if not self.is_static:
-            if  self.segments[0].coordinates.x == Field.width:
+            if self.segments[0].coordinates.x == Field.width:
                 self.segments[0].coordinates.x = 0
 
-            elif  self.segments[0].coordinates.x == -Field.cell_size:
+            elif self.segments[0].coordinates.x == -Field.cell_size:
                 self.segments[0].coordinates.x = Field.width
 
-            elif  self.segments[0].coordinates.y == Field.height:
+            elif self.segments[0].coordinates.y == Field.height:
                 self.segments[0].coordinates.y = 0
 
-            elif  self.segments[0].coordinates.y == -Field.cell_size:
+            elif self.segments[0].coordinates.y == -Field.cell_size:
                 self.segments[0].coordinates.y = Field.height
 
     def logic_at_the_apple(self):
