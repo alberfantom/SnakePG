@@ -187,6 +187,8 @@ class Snake(Structure):
             for apple in Field.get_instances_of(_class_name="Apple"):
                 if self.segments[0].is_collision(_with=apple):
                     apple.randomize_coordinates()
+
+                    self.segments = self.past_segments
                     self.shift(add_segment=True)
 
     def draw(self, surface):
@@ -195,13 +197,13 @@ class Snake(Structure):
 
 class Field:
     default_field = ["O O * * * * * O O",
-                     "O * * * A * * * O",
-                     "* * * * * A * * *",
+                     "O * * * * * * * O",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
-                     "O * * * S * * * O",
+                     "* * * * * * * * *",
+                     "O A * * S * * A O",
                      "O O * * * * * O O"]
 
     for row in range(len(default_field)):
