@@ -161,10 +161,11 @@ class Snake(Structure):
 
     def logic_at_the_obstacle(self):
         if not self.is_static:
-            for obstacle in Field.get_instances_of(_class_name="obstacle"):
-                if obstacle.is_collision(_with=Field.structures["snake"].segments[0]):
-                    self.segments = self.past_segments
-                    self.is_static = True
+            for obstacle in Field.get_instances_of(_class_name="Obstacle"):
+                for snake in Field.get_instances_of(_class_name="Snake"):
+                    if obstacle.is_collision(_with=snake.segments[0]):
+                        self.segments = self.past_segments
+                        self.is_static = True
 
     def logic_at_the_segment(self):
         if not self.is_static:
@@ -196,6 +197,14 @@ class Snake(Structure):
                     self.segments = self.past_segments
                     self.shift(add_segment=True)
 
+    def logic_at_the_snake(self):
+        for snake in Field.get_instances_of("Snake"):
+            if snake != self:
+                for segment in snake.segments:
+                    if segment.is_collision(_with=self.segments[0]):
+                        self.segments = self.past_segments
+                        self.is_static = True
+
     def draw(self, surface):
         for segment in self.segments:
             surface.blit(segment.surface, segment.coordinates)
@@ -203,12 +212,12 @@ class Snake(Structure):
 class Field:
     default_field = ["O O * * * * * O O",
                      "O * * * * * * * O",
+                     "* * A A A A A * *",
+                     "* * A A A A A * *",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
-                     "* * * * * * * * *",
-                     "* * * * * * * * *",
-                     "O A * * S * * A O",
+                     "O * S * S * * * O",
                      "O O * * * * * O O"]
 
     for row in range(len(default_field)):
@@ -312,6 +321,7 @@ class Game:
                         snake.logic_at_the_segment()
                         snake.logic_at_the_border()
                         snake.logic_at_the_apple()
+                        snake.logic_at_the_snake()
 
             self.field.draw(screen=self.screen, structures=Field.structures)
 
