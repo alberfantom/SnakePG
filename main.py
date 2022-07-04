@@ -16,7 +16,7 @@ class Structure:
 
         else:
             # TODO: rounding x to the nearest, not to the minimum.
-            self.coordinates.x = x - (x % Field.cell_size)
+            self.coordinates.x = round(x, Field.cell_size)
 
         if not y and not isinstance(x, (int, float)):
             random_y = random.randrange(Field.cell_size, Field.height, Field.cell_size)
@@ -24,7 +24,7 @@ class Structure:
 
         else:
             # TODO: rounding y to the nearest, not to the minimum.
-            self.coordinates.y = y - (y % Field.cell_size) 
+            self.coordinates.y = round(y, Field.cell_size)
 
         if not x and not y and coordinates:
             self.coordinates = pygame.math.Vector2(coordinates)
@@ -38,21 +38,30 @@ class Structure:
         else:
             self.surface = pygame.image.load(texture_path)
     
-    def copy(self):
-        return Structure(start_x=self.coordinates.x, start_y=self.coordinates.y, texture_path=self.texture_path)
-    
+    def round(what: int, _at_step: int) -> int:
+        at_step_average = int(_at_step / 2)
+
+        if what % _at_step <= at_step_average - 1:            
+            return what - (what % _at_step)
+
+        else:
+            return what + ((_at_step * (what // _at_step + 1)) - what)
+
     def is_collision(self, _with=None) -> bool:
         if self.coordinates == _with.coordinates:
             return True
 
         return False
 
+    def copy(self):
+        return Structure(start_x=self.coordinates.x, start_y=self.coordinates.y, texture_path=self.texture_path)
+
     def draw(self, surface):
         surface.blit(self.surface, self.coordinates)
 
 class Apple(Structure):
     texture_paths = {
-        "apple": None
+        "apple": "sources\\textures\\food.png"
     }
 
     def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
@@ -77,7 +86,7 @@ class Apple(Structure):
 
 class Obstacle(Structure):
     texture_paths = {
-        "obstacle": None
+        "obstacle": "sources\\textures\\obstacle.png"
     }
 
     def __init__(self, start_x=None, start_y=None, start_coordinates=None, texture_path=None):
@@ -85,8 +94,7 @@ class Obstacle(Structure):
 
 class Snake(Structure): 
     texture_paths = {
-        "snake": None,
-        "segment": None
+        "snake": "sources\\textures\\segment.png"
     }
 
     speed = 7 * 25 # in milliseconds 
@@ -108,7 +116,7 @@ class Snake(Structure):
         init_segment_base = Structure(start_coordinates=start_coordinates, texture_path=texture_path)
         self.segments.append(init_segment_base)
 
-        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_paths["segment"])
+        init_segment = Structure(start_x=init_segment_base.coordinates.x + random_offset.x, start_y=init_segment_base.coordinates.y + random_offset.y, texture_path=Snake.texture_paths["snake"])
         self.segments.append(init_segment)
     
         self._offset = (0, 0)
@@ -212,12 +220,12 @@ class Snake(Structure):
 class Field:
     default_field = ["O O * * * * * O O",
                      "O * * * * * * * O",
-                     "* * A A A A A * *",
-                     "* * A A A A A * *",
+                     "* * * * A * * * *",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
                      "* * * * * * * * *",
-                     "O * S * S * * * O",
+                     "* * * * * * * * *",
+                     "O * * * S * * * O",
                      "O O * * * * * O O"]
 
     for row in range(len(default_field)):
@@ -230,6 +238,7 @@ class Field:
     structures = dict()
 
     cell_size = 32
+    average_cell_size = cell_size / 2
 
     height = len(default_field) * cell_size
     width = len(default_field[0]) * cell_size
